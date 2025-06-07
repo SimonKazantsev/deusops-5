@@ -3,7 +3,8 @@ services:
     build: ./spring-backend
     restart: on-failure
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     environment:
       - MYSQL_DATABASE=hobbie_db
       - MYSQL_PORT=3306
@@ -17,8 +18,9 @@ services:
       - REACT_APP_API_BASE_URL=http://localhost:3000=value
     depends_on:
       - backend
-    ports:
-      - 3000:3000
+    #ports:
+    #  - 3000:3000
+
   database:
     image: mysql:8.0.41-debian
     volumes:
@@ -30,11 +32,19 @@ services:
       - MYSQL_USER=test
       - MYSQL_PASSWORD=test
       - MYSQL_ROOT_PASSWORD=root
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-P", "3306"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   nginx:
     build: ./nginx
     ports:
       - 80:80
     volumes:
       - "./nginx/nginx.conf:/etc/nginx/nginx.conf"
+    restart: always
+
 volumes:
   mysql:
